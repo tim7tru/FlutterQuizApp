@@ -19,8 +19,14 @@ class _MyAppState extends State<MyApp> {
   List<int> _currentFactors;
   List<Map<String, Object>> _currentProducts;
   bool _hasStarted = false;
+
+  double _currentAverageScore = 0;
+
+  int _currentTotalScore = 0;
   int _totalScore = 0;
   int _questionCount = 0;
+  int _currentHighScore = 0;
+  int _timesPlayed = 0;
 
   void _onStartPressed() {
     setState(() {
@@ -32,13 +38,47 @@ class _MyAppState extends State<MyApp> {
 
   void _onAnswerPressed(bool correct) {
     setState(() {
-      if (correct) {
-        _totalScore++;
-      }
       _questionCount++;
+      if (_questionCount > 10) {
+        _resetQuiz();
+      } 
+      if (correct) {
+        _currentTotalScore++;
+      }
       _currentFactors = _math.getFactors();
       _currentProducts = _math.getProductList(_currentFactors);
     });
+  }
+
+  void _resetQuiz() {
+    _totalScore += _currentTotalScore;
+    _timesPlayed++;
+    _currentAverageScore = _totalScore / _timesPlayed;
+
+    if (_currentTotalScore > _currentHighScore) {
+      _currentHighScore = _currentTotalScore;
+    }
+
+    _currentTotalScore = 0;
+    _currentAverageScore = _currentHighScore / _timesPlayed;
+    _questionCount = 0;
+    _hasStarted = false;
+  }
+
+  Widget bodyDecision() {
+    if (!_hasStarted) {
+      return Home(
+        onStartPressed: _onStartPressed,
+        currentHighScore: _currentHighScore,
+        averageHighScore: _currentAverageScore);
+    } else {
+      return Quiz(
+              products: _currentProducts,
+              factors: _currentFactors,
+              onAnswerPressed: _onAnswerPressed,
+              score: _currentTotalScore,
+              questionCount: _questionCount);
+    }
   }
 
   @override
@@ -48,16 +88,7 @@ class _MyAppState extends State<MyApp> {
       appBar: AppBar(
         title: Text("Flutter Product Quiz App"),
       ),
-      body: _hasStarted
-          ? Quiz(
-              products: _currentProducts,
-              factors: _currentFactors,
-              onAnswerPressed: _onAnswerPressed,
-              score: _totalScore,
-              questionCount: _questionCount)
-          : Home(
-              onStartPressed: _onStartPressed,
-            ),
+      body: bodyDecision(),
     ));
   }
 }
